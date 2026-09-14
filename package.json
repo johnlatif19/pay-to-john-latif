@@ -1,18 +1,16 @@
 {
   "name": "pay-to-john-latif",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "pay-to-john-latif / Payment Simulation System (Demo only)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
-    "hash": "node scripts/hash-password.js",
-    "session": "node scripts/generate-session.js",
-    "test:firebase": "node scripts/test-firebase.js"
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
+    "connect-firestore": "^1.0.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
