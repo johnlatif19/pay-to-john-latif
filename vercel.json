@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" },
+    { "src": "public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "server.js" },
+
+    { "src": "/login",       "dest": "public/login.html" },
+    { "src": "/dashboard",   "dest": "public/dashboard.html" },
+    { "src": "/success",     "dest": "public/success.html" },
+    { "src": "/failed",      "dest": "public/failed.html" },
+    { "src": "/waiting",     "dest": "public/waiting.html" },
+
+    { "src": "/css/(.*)", "dest": "public/css/$1" },
+    { "src": "/js/(.*)",  "dest": "public/js/$1" },
+
+    { "src": "/",         "dest": "public/index.html" },
+    { "src": "/(.*)",     "dest": "public/$1" }
+  ]
+}
