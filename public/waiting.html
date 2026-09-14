@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>جارٍ معالجة الدفع | pay-to-john-latif</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --bg-1:#f7f8fa;
+    --bg-2:#eef1f5;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#5b6472;
+    --line:#dde3ec;
+    --brand:#1f3a8a;
+    --brand-2:#152a66;
+    --brand-soft:#eaf0fb;
+    --ok:#15803d;
+    --ok-soft:#dcfce7;
+    --warn:#b45309;
+    --warn-soft:#fef3c7;
+    --err:#b91c1c;
+    --err-soft:#fee2e2;
+    --radius:12px;
+    --radius-sm:9px;
+    --shadow:0 8px 24px rgba(15,23,42,.08);
+  }
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",Tahoma,system-ui,-apple-system,sans-serif;
+    background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    color:var(--text);
+    min-height:100vh;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .center{
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:20px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:32px 28px;
+    width:100%;
+    max-width:480px;
+    text-align:center;
+  }
+  .brand{
+    display:flex;align-items:center;justify-content:center;
+    gap:10px;margin-bottom:22px;
+    font-weight:800;font-size:17px;color:var(--brand);
+  }
+  .brand .dot{
+    width:11px;height:11px;border-radius:50%;
+    background:var(--brand);
+    box-shadow:0 0 0 4px rgba(31,58,138,.15);
+  }
+
+  h1{
+    font-size:22px;margin:0 0 8px;
+  }
+  .subtitle{
+    color:var(--muted);font-size:14px;margin:0 0 18px;
+  }
+
+  /* ---------- Spinner ---------- */
+  .spinner-wrap{
+    position:relative;
+    width:80px;height:80px;
+    margin:16px auto 22px;
+  }
+  .spinner{
+    width:80px;height:80px;
+    border:5px solid #e2e8f0;
+    border-top-color:var(--brand);
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner-inner{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;color:var(--brand);
+    font-weight:800;
+  }
+
+  .status-line{
+    font-size:15px;color:var(--text);font-weight:600;
+    margin:0 0 6px;
+  }
+  .status-sub{
+    font-size:13px;color:var(--muted);
+    min-height:20px;
+  }
+
+  /* ---------- Summary ---------- */
+  .summary{
+    background:#f9fafc;border:1px solid var(--line);
+    border-radius:var(--radius-sm);padding:14px 16px;
+    margin:20px 0 0;text-align:right;
+  }
+  .summary .line{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);
+    font-size:14px;
+  }
+  .summary .line:last-child{border-bottom:none}
+  .summary .line span:first-child{color:var(--muted)}
+  .summary .line strong{
+    font-family:Consolas,Monaco,monospace;
+    font-size:13px;color:var(--brand);
+  }
+
+  .badge{
+    display:inline-block;padding:4px 12px;border-radius:999px;
+    font-size:12px;font-weight:700;
+  }
+  .badge.pending{background:var(--warn-soft);color:#92400e}
+  .badge.success{background:var(--ok-soft);color:#166534}
+  .badge.failed{background:var(--err-soft);color:#991b1b}
+
+  /* ---------- Alert ---------- */
+  .alert{
+    padding:11px 14px;border-radius:var(--radius-sm);
+    margin:16px 0 0;font-size:13px;line-height:1.5;
+    text-align:right;
+  }
+  .alert.err{background:var(--err-soft);color:#7f1d1d;border:1px solid #fecaca}
+  .alert.info{background:#e0f2fe;color:#075985;border:1px solid #bae6fd}
+
+  .hidden{display:none!important}
+
+  /* ---------- Info note ---------- */
+  .note{
+    margin-top:20px;padding:12px 14px;
+    background:#f9fafc;border-radius:var(--radius-sm);
+    border:1px solid var(--line);
+    font-size:12px;color:var(--muted);text-align:right;
+    line-height:1.7;
+  }
+
+  @media(max-width:480px){
+    .card{padding:24px 18px}
+    h1{font-size:20px}
+    .spinner,.spinner-wrap{width:64px;height:64px}
+    .spinner{border-width:4px}
+  }
+</style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>pay-to-john-latif</span>
+      </div>
+
+      <div id="spinnerWrap" class="spinner-wrap">
+        <div class="spinner"></div>
+      </div>
+
+      <h1>Processing Payment</h1>
+      <p class="subtitle">جارٍ مراجعة عملية الدفع، يرجى الانتظار…</p>
+
+      <p class="status-line" id="statusText">جارٍ التحقق من حالة العملية</p>
+      <p class="status-sub" id="statusSub">لا تُغلق هذه الصفحة</p>
+
+      <div class="summary" id="summary" style="display:none">
+        <div class="line">
+          <span>رقم العملية</span>
+          <strong id="txId">—</strong>
+        </div>
+        <div class="line">
+          <span>المبلغ</span>
+          <strong id="amount">—</strong>
+        </div>
+        <div class="line">
+          <span>طريقة الدفع</span>
+          <strong id="method">—</strong>
+        </div>
+        <div class="line">
+          <span>الحالة</span>
+          <span class="badge pending" id="statusBadge">Pending</span>
+        </div>
+      </div>
+
+      <div id="alertBox"></div>
+
+      <div class="note">
+        <strong>ملاحظة:</strong>
+        يتم مراجعة عملية الدفع يدويًا من قِبل الإدارة. قد يستغرق ذلك بضع دقائق.
+        سيتم تحويلك تلقائيًا عند اكتمال المراجعة.
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  const el = (id) => document.getElementById(id);
+
+  /* =========================================================
+   * Helper
+   * ========================================================= */
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function showAlert(message, type) {
+    const box = el('alertBox');
+    if (!box) return;
+    if (!message) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="alert ' + (type || 'err') + '">' + escapeHtml(message) + '</div>';
+  }
+
+  function formatAmount(n) {
+    const num = Number(n);
+    if (!Number.isFinite(num)) return '—';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function methodLabel(m) {
+    return m === 'wallet' ? 'محفظة إلكترونية' : (m === 'instapay' ? 'InstaPay' : m);
+  }
+
+  /* =========================================================
+   * Get token from URL
+   * ========================================================= */
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+
+  if (!token) {
+    window.location.replace('/failed');
+    return;
+  }
+
+  /* =========================================================
+   * State
+   * ========================================================= */
+  let polling = null;
+  let consecutiveErrors = 0;
+  let stopped = false;
+
+  const statusText  = el('statusText');
+  const statusSub   = el('statusSub');
+  const statusBadge = el('statusBadge');
+  const summaryBox  = el('summary');
+  const spinnerWrap = el('spinnerWrap');
+
+  /* =========================================================
+   * Set badge
+   * ========================================================= */
+  function setBadge(status) {
+    statusBadge.className = 'badge ' + status;
+    statusBadge.textContent =
+      status === 'pending' ? 'Pending'
+      : status === 'success' ? 'Success'
+      : 'Failed';
+  }
+
+  /* =========================================================
+   * Load transaction details once (بعد ما تبقى pending نعرضها)
+   * ========================================================= */
+  async function loadDetails() {
+    try {
+      const res = await fetch('/api/payment/status?token=' + encodeURIComponent(token));
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !data.transaction_id) return;
+
+      el('txId').textContent = data.transaction_id;
+      summaryBox.style.display = 'block';
+    } catch (e) {
+      /* تجاهل */
+    }
+  }
+
+  /* =========================================================
+   * Poll status
+   * ========================================================= */
+  async function checkStatus() {
+    if (stopped) return;
+
+    try {
+      const res = await fetch('/api/payment/status?token=' + encodeURIComponent(token), {
+        cache: 'no-store'
+      });
+
+      /* ---- Token غير موجود ---- */
+      if (res.status === 404) {
+        stopped = true;
+        clearInterval(polling);
+        showAlert('رابط العملية غير صالح، جارٍ التحويل…', 'err');
+        setTimeout(() => window.location.replace('/failed'), 900);
+        return;
+      }
+
+      /* ---- خطأ سيرفر ---- */
+      if (!res.ok) {
+        consecutiveErrors++;
+        if (consecutiveErrors >= 6) {
+          statusSub.textContent = 'تعذّر الاتصال بالخادم، سيتم إعادة المحاولة…';
+        }
+        return;
+      }
+
+      consecutiveErrors = 0;
+      const data = await res.json();
+
+      /* ---- املأ البيانات لأول مرة ---- */
+      if (data.transaction_id && !summaryBox.style.display.includes('block')) {
+        el('txId').textContent = data.transaction_id;
+        summaryBox.style.display = 'block';
+      }
+
+      setBadge(data.status);
+
+      /* ---- success ---- */
+      if (data.status === 'success') {
+        stopped = true;
+        clearInterval(polling);
+        spinnerWrap.innerHTML = '<div class="spinner"></div>';
+        statusText.textContent = 'تمت الموافقة على العملية';
+        statusSub.textContent = 'جارٍ التحويل إلى صفحة النجاح…';
+        setTimeout(() => {
+          window.location.replace('/success?token=' + encodeURIComponent(token));
+        }, 700);
+      }
+
+      /* ---- failed ---- */
+      else if (data.status === 'failed') {
+        stopped = true;
+        clearInterval(polling);
+        spinnerWrap.innerHTML = '<div class="spinner"></div>';
+        statusText.textContent = 'تم رفض العملية';
+        statusSub.textContent = 'جارٍ التحويل إلى صفحة الفشل…';
+        setTimeout(() => {
+          window.location.replace('/failed?token=' + encodeURIComponent(token));
+        }, 700);
+      }
+
+      /* ---- pending ---- */
+      else {
+        statusText.textContent = 'عملية الدفع قيد المراجعة';
+        statusSub.textContent = 'يرجى الانتظار، لا تُغلق هذه الصفحة';
+      }
+    } catch (e) {
+      consecutiveErrors++;
+      if (consecutiveErrors >= 6) {
+        statusSub.textContent = 'تعذّر الاتصال بالخادم، سيتم إعادة المحاولة…';
+      }
+    }
+  }
+
+  /* =========================================================
+   * Init
+   * ========================================================= */
+  loadDetails();
+  checkStatus();
+  polling = setInterval(checkStatus, 2500);
+
+  /* =========================================================
+   * Page visibility — لو المستخدم رجع للتاب، نتحقق فورًا
+   * ========================================================= */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && !stopped) {
+      checkStatus();
+    }
+  });
+})();
+</script>
+</body>
+</html>
