@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>تسجيل الدخول | pay-to-john-latif</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --bg-1:#f7f8fa;
+    --bg-2:#eef1f5;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#5b6472;
+    --line:#dde3ec;
+    --brand:#1f3a8a;
+    --brand-2:#152a66;
+    --brand-soft:#eaf0fb;
+    --ok:#15803d;
+    --err:#b91c1c;
+    --err-soft:#fee2e2;
+    --radius:12px;
+    --radius-sm:9px;
+    --shadow:0 8px 24px rgba(15,23,42,.08);
+  }
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",Tahoma,system-ui,-apple-system,sans-serif;
+    background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    color:var(--text);
+    min-height:100vh;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .center{
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:20px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:32px 28px;
+    width:100%;
+    max-width:420px;
+  }
+  .brand{
+    display:flex;align-items:center;justify-content:center;
+    gap:10px;margin-bottom:24px;
+    font-weight:800;font-size:19px;color:var(--brand);
+  }
+  .brand .dot{
+    width:11px;height:11px;border-radius:50%;
+    background:var(--brand);
+    box-shadow:0 0 0 4px rgba(31,58,138,.15);
+  }
+  h1{
+    font-size:22px;margin:0 0 6px;text-align:center;
+  }
+  .subtitle{
+    text-align:center;color:var(--muted);
+    font-size:14px;margin:0 0 22px;
+  }
+
+  label{
+    display:block;font-weight:600;margin:14px 0 6px;font-size:14px;
+  }
+  input[type="text"],
+  input[type="password"]{
+    width:100%;padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    font-size:15px;background:#fff;color:var(--text);
+    transition:border-color .2s,box-shadow .2s;
+    font-family:inherit;
+  }
+  input:focus{
+    outline:none;border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(31,58,138,.15);
+  }
+
+  .field-wrap{position:relative}
+  .toggle-pass{
+    position:absolute;top:50%;left:12px;
+    transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;
+    color:var(--muted);font-size:13px;font-weight:600;
+    padding:4px 8px;font-family:inherit;
+  }
+  .toggle-pass:hover{color:var(--brand)}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:13px 18px;border:none;border-radius:var(--radius-sm);
+    font-size:15px;font-weight:700;cursor:pointer;
+    transition:background .2s,transform .1s,opacity .2s;
+    font-family:inherit;width:100%;margin-top:20px;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-primary:hover:not(:disabled){background:var(--brand-2)}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+
+  .alert{
+    padding:11px 14px;border-radius:var(--radius-sm);
+    margin:16px 0 0;font-size:14px;line-height:1.5;
+  }
+  .alert.err{background:var(--err-soft);color:#7f1d1d;border:1px solid #fecaca}
+  .alert.ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+
+  .foot{
+    text-align:center;margin-top:20px;
+    font-size:12px;color:var(--muted);
+  }
+
+  .toast{
+    position:fixed;top:20px;left:50%;
+    transform:translate(-50%,-20px);
+    background:#0f172a;color:#fff;
+    padding:12px 20px;border-radius:var(--radius-sm);
+    box-shadow:var(--shadow);opacity:0;
+    transition:opacity .25s,transform .25s;
+    z-index:9999;font-size:14px;font-weight:600;
+    pointer-events:none;max-width:90vw;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.ok{background:var(--ok)}
+  .toast.err{background:var(--err)}
+
+  @media(max-width:480px){
+    .card{padding:24px 20px}
+    h1{font-size:20px}
+  }
+</style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>pay-to-john-latif</span>
+      </div>
+
+      <h1>تسجيل الدخول</h1>
+      <p class="subtitle">لوحة الإدارة — Admin Panel</p>
+
+      <form id="loginForm" autocomplete="on" novalidate>
+        <label for="username">اسم المستخدم</label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          autocomplete="username"
+          placeholder="ادخل اسم المستخدم"
+          required
+        />
+
+        <label for="password">كلمة المرور</label>
+        <div class="field-wrap">
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="ادخل كلمة المرور"
+            required
+          />
+          <button
+            type="button"
+            class="toggle-pass"
+            id="togglePass"
+            aria-label="إظهار كلمة المرور"
+          >
+            إظهار
+          </button>
+        </div>
+
+        <div id="alertBox" aria-live="polite"></div>
+
+        <button class="btn btn-primary" id="loginBtn" type="submit">
+          دخول
+        </button>
+      </form>
+
+      <div class="foot">
+        هذه الصفحة مخصصة للمشرفين فقط
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const el = (id) => document.getElementById(id);
+
+  const form       = el('loginForm');
+  const userInput  = el('username');
+  const passInput  = el('password');
+  const togglePass = el('togglePass');
+  const loginBtn   = el('loginBtn');
+  const alertBox   = el('alertBox');
+  const toastEl    = el('toast');
+
+  let submitting = false;
+
+  /* ---------------------------------------------------------
+   * Helpers
+   * --------------------------------------------------------- */
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function showToast(message, type) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.className = 'toast show ' + (type || '');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => {
+      toastEl.className = 'toast ' + (type || '');
+    }, 2600);
+  }
+
+  function showAlert(message, type) {
+    if (!alertBox) return;
+    if (!message) {
+      alertBox.innerHTML = '';
+      return;
+    }
+    alertBox.innerHTML =
+      '<div class="alert ' + (type || 'err') + '">' + escapeHtml(message) + '</div>';
+  }
+
+  /* ---------------------------------------------------------
+   * إظهار / إخفاء كلمة المرور
+   * --------------------------------------------------------- */
+  togglePass.addEventListener('click', function () {
+    const isPass = passInput.type === 'password';
+    passInput.type = isPass ? 'text' : 'password';
+    togglePass.textContent = isPass ? 'إخفاء' : 'إظهار';
+    togglePass.setAttribute(
+      'aria-label',
+      isPass ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'
+    );
+    passInput.focus();
+  });
+
+  /* ---------------------------------------------------------
+   * التحقق من تسجيل الدخول مسبقًا
+   * --------------------------------------------------------- */
+  async function checkAlreadyLoggedIn() {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data && data.success) {
+          window.location.replace('/dashboard');
+        }
+      }
+    } catch (e) {
+      /* تجاهل — هنكمل عادي */
+    }
+  }
+
+  /* ---------------------------------------------------------
+   * إرسال نموذج الدخول
+   * --------------------------------------------------------- */
+  async function submitLogin(e) {
+    if (e) e.preventDefault();
+    if (submitting) return;
+
+    const username = (userInput.value || '').trim();
+    const password = passInput.value || '';
+
+    if (!username) {
+      showAlert('يرجى إدخال اسم المستخدم.');
+      userInput.focus();
+      return;
+    }
+    if (!password) {
+      showAlert('يرجى إدخال كلمة المرور.');
+      passInput.focus();
+      return;
+    }
+
+    submitting = true;
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'جارٍ التحقق…';
+    showAlert('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ username, password })
+      });
+
+      let data = {};
+      try { data = await res.json(); } catch (e2) { /* ignore */ }
+
+      if (!res.ok || !data.success) {
+        const msg =
+          (data && data.error && data.error.message) ||
+          (res.status === 429
+            ? 'محاولات كثيرة. حاول لاحقًا.'
+            : 'اسم المستخدم أو كلمة المرور غير صحيحة.');
+        showAlert(msg);
+        showToast('فشل تسجيل الدخول', 'err');
+        submitting = false;
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'دخول';
+        return;
+      }
+
+      showToast('تم تسجيل الدخول بنجاح', 'ok');
+      showAlert('تم تسجيل الدخول، جارٍ التحويل…', 'ok');
+
+      // تأخير بسيط للسماح بظهور التوست
+      setTimeout(() => {
+        window.location.replace('/dashboard');
+      }, 350);
+    } catch (err) {
+      showAlert('تعذّر الاتصال بالخادم. تأكد من الشبكة.');
+      showToast('خطأ في الشبكة', 'err');
+      submitting = false;
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'دخول';
+    }
+  }
+
+  form.addEventListener('submit', submitLogin);
+
+  /* ---------------------------------------------------------
+   * Init
+   * --------------------------------------------------------- */
+  checkAlreadyLoggedIn();
+  userInput.focus();
+})();
+</script>
+</body>
+</html>
