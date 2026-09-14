@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>فشل الدفع | pay-to-john-latif</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --bg-1:#f7f8fa;
+    --bg-2:#eef1f5;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#5b6472;
+    --line:#dde3ec;
+    --brand:#1f3a8a;
+    --brand-2:#152a66;
+    --ok:#15803d;
+    --ok-soft:#dcfce7;
+    --err:#b91c1c;
+    --err-soft:#fee2e2;
+    --radius:12px;
+    --radius-sm:9px;
+    --shadow:0 8px 24px rgba(15,23,42,.08);
+  }
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",Tahoma,system-ui,-apple-system,sans-serif;
+    background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    color:var(--text);
+    min-height:100vh;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .center{
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:20px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:32px 28px;
+    width:100%;
+    max-width:480px;
+    text-align:center;
+  }
+  .brand{
+    display:flex;align-items:center;justify-content:center;
+    gap:10px;margin-bottom:22px;
+    font-weight:800;font-size:17px;color:var(--brand);
+  }
+  .brand .dot{
+    width:11px;height:11px;border-radius:50%;
+    background:var(--brand);
+    box-shadow:0 0 0 4px rgba(31,58,138,.15);
+  }
+
+  /* ---------- Icon ---------- */
+  .icon-circle{
+    width:80px;height:80px;
+    border-radius:50%;
+    background:var(--err-soft);
+    display:flex;align-items:center;justify-content:center;
+    margin:8px auto 20px;
+    animation:pop .35s ease-out;
+  }
+  .icon-circle svg{
+    width:44px;height:44px;
+    color:var(--err);
+  }
+  @keyframes pop{
+    0%{transform:scale(.7);opacity:0}
+    100%{transform:scale(1);opacity:1}
+  }
+
+  h1{
+    font-size:22px;margin:0 0 8px;
+    color:var(--err);
+  }
+  .subtitle{
+    color:var(--muted);font-size:14px;margin:0 0 20px;
+  }
+
+  /* ---------- Summary ---------- */
+  .summary{
+    background:#f9fafc;border:1px solid var(--line);
+    border-radius:var(--radius-sm);padding:14px 16px;
+    margin:16px 0 0;text-align:right;
+  }
+  .summary .line{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);
+    font-size:14px;
+  }
+  .summary .line:last-child{border-bottom:none}
+  .summary .line span:first-child{color:var(--muted)}
+  .summary .line strong{
+    font-weight:700;text-align:left;
+    word-break:break-all;max-width:60%;
+  }
+  .summary .line strong.mono{
+    font-family:Consolas,Monaco,monospace;
+    font-size:13px;color:var(--brand);
+  }
+
+  .badge{
+    display:inline-block;padding:4px 12px;border-radius:999px;
+    font-size:12px;font-weight:700;
+  }
+  .badge.failed{background:var(--err-soft);color:#991b1b}
+
+  /* ---------- Loading state ---------- */
+  .spinner{
+    width:56px;height:56px;
+    border:5px solid #e2e8f0;
+    border-top-color:var(--brand);
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:16px auto 20px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:13px 18px;border:none;border-radius:var(--radius-sm);
+    font-size:15px;font-weight:700;cursor:pointer;
+    transition:background .2s,transform .1s;
+    font-family:inherit;width:100%;margin-top:14px;
+    text-decoration:none;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-primary:hover{background:var(--brand-2)}
+  .btn-ghost{
+    background:#f1f5f9;color:var(--text);
+  }
+  .btn-ghost:hover{background:#e2e8f0}
+
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+
+  .hidden{display:none!important}
+
+  .note{
+    margin-top:18px;padding:10px 12px;
+    background:#fef2f2;border-radius:var(--radius-sm);
+    border:1px solid #fecaca;
+    font-size:12px;color:#991b1b;text-align:right;
+    line-height:1.7;
+  }
+
+  @media(max-width:480px){
+    .card{padding:24px 18px}
+    h1{font-size:20px}
+    .icon-circle{width:64px;height:64px}
+    .icon-circle svg{width:34px;height:34px}
+  }
+</style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>pay-to-john-latif</span>
+      </div>
+
+      <!-- ============ Loading ============ -->
+      <div id="loadingState">
+        <div class="spinner"></div>
+        <p class="muted">جارٍ التحقق من العملية…</p>
+      </div>
+
+      <!-- ============ Failed ============ -->
+      <div id="failedState" class="hidden">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+        <h1>Payment Failed</h1>
+        <p class="subtitle">لم تكتمل عملية الدفع. يمكنك المحاولة مرة أخرى.</p>
+
+        <div class="summary" id="summary" style="display:none">
+          <div class="line">
+            <span>Transaction ID</span>
+            <strong class="mono" id="txId">—</strong>
+          </div>
+          <div class="line">
+            <span>Order ID</span>
+            <strong class="mono" id="orderId">—</strong>
+          </div>
+          <div class="line">
+            <span>Amount</span>
+            <strong id="amount">—</strong>
+          </div>
+          <div class="line">
+            <span>Payment Method</span>
+            <strong id="method">—</strong>
+          </div>
+          <div class="line">
+            <span>Date</span>
+            <strong id="date">—</strong>
+          </div>
+          <div class="line">
+            <span>Status</span>
+            <span class="badge failed">Failed</span>
+          </div>
+        </div>
+
+        <a class="btn btn-primary" href="/" id="retryBtn">المحاولة مرة أخرى</a>
+        <a class="btn btn-ghost" href="/">العودة للصفحة الرئيسية</a>
+
+        <div class="note">
+          إذا كنت تعتقد أن هناك خطأ، يرجى التواصل مع الدعم مع رقم العملية أعلاه.
+        </div>
+      </div>
+
+      <!-- ============ No token ============ -->
+      <div id="noTokenState" class="hidden">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+        <h1>Payment Failed</h1>
+        <p class="subtitle">لم تكتمل عملية الدفع أو أن الرابط غير صالح.</p>
+
+        <a class="btn btn-primary" href="/">العودة للصفحة الرئيسية</a>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  const el = (id) => document.getElementById(id);
+
+  /* =========================================================
+   * Helper
+   * ========================================================= */
+  function formatAmount(n) {
+    const num = Number(n);
+    if (!Number.isFinite(num)) return '—';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString('ar-EG', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch { return iso; }
+  }
+
+  function methodLabel(m) {
+    return m === 'wallet' ? 'محفظة إلكترونية' : (m === 'instapay' ? 'InstaPay' : m);
+  }
+
+  /* =========================================================
+   * Element refs
+   * ========================================================= */
+  const loadingState   = el('loadingState');
+  const failedState    = el('failedState');
+  const noTokenState   = el('noTokenState');
+  const summaryBox     = el('summary');
+
+  function showNoToken() {
+    loadingState.classList.add('hidden');
+    failedState.classList.add('hidden');
+    noTokenState.classList.remove('hidden');
+  }
+
+  function showFailed(tx) {
+    loadingState.classList.add('hidden');
+    noTokenState.classList.add('hidden');
+
+    if (tx) {
+      el('txId').textContent = tx.transaction_id || '—';
+      el('orderId').textContent = tx.order_id || '—';
+      el('amount').textContent = formatAmount(tx.amount) + ' ' + (tx.currency || '');
+      el('method').textContent = methodLabel(tx.payment_method);
+      el('date').textContent = formatDate(tx.updated_at || tx.created_at);
+      summaryBox.style.display = 'block';
+
+      // زر Retry بياخد على صفحة الدفع للينك الأصلي
+      if (tx.link_id) {
+        el('retryBtn').href = '/pay/' + tx.link_id;
+      }
+    } else {
+      summaryBox.style.display = 'none';
+    }
+
+    failedState.classList.remove('hidden');
+  }
+
+  /* =========================================================
+   * Init
+   * ========================================================= */
+  const token = new URLSearchParams(window.location.search).get('token');
+
+  if (!token) {
+    showNoToken();
+    return;
+  }
+
+  fetch('/api/payment/details?token=' + encodeURIComponent(token), {
+    credentials: 'same-origin'
+  })
+    .then(async function (res) {
+      let data = {};
+      try { data = await res.json(); } catch (e) { /* ignore */ }
+
+      /* ---- Token غير موجود ---- */
+      if (res.status === 403 || res.status === 404) {
+        showNoToken();
+        return;
+      }
+
+      /* ---- لسه pending ---- */
+      if (res.status === 409 || (data.error && data.error.code === 'STILL_PENDING')) {
+        window.location.replace('/waiting?token=' + encodeURIComponent(token));
+        return;
+      }
+
+      /* ---- نجح الجلب ---- */
+      if (res.ok && data.success && data.transaction) {
+        const status = data.transaction.status;
+
+        if (status === 'success') {
+          // لو حصل تحويل بالغلط، رجّعه للنجاح
+          window.location.replace('/success?token=' + encodeURIComponent(token));
+          return;
+        }
+
+        showFailed(data.transaction);
+        return;
+      }
+
+      /* ---- أي حالة تانية ---- */
+      showNoToken();
+    })
+    .catch(function () {
+      showNoToken();
+    });
+})();
+</script>
+</body>
+</html>
