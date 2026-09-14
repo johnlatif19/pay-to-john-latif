@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>إتمام الدفع | pay-to-john-latif</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --bg-1:#f7f8fa;
+    --bg-2:#eef1f5;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#5b6472;
+    --line:#dde3ec;
+    --brand:#1f3a8a;
+    --brand-2:#152a66;
+    --brand-soft:#eaf0fb;
+    --ok:#15803d;
+    --err:#b91c1c;
+    --err-soft:#fee2e2;
+    --radius:12px;
+    --radius-sm:9px;
+    --shadow:0 8px 24px rgba(15,23,42,.08);
+  }
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",Tahoma,system-ui,-apple-system,sans-serif;
+    background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    color:var(--text);
+    min-height:100vh;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .center{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:28px;
+    width:100%;
+    max-width:720px;
+  }
+  .toolbar{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;margin-bottom:18px;flex-wrap:wrap;
+  }
+  .logo{
+    display:inline-flex;align-items:center;gap:10px;
+    font-weight:800;font-size:19px;letter-spacing:.2px;
+    color:var(--brand);
+  }
+  .logo .dot{
+    width:11px;height:11px;border-radius:50%;
+    background:var(--brand);
+    box-shadow:0 0 0 4px rgba(31,58,138,.15);
+  }
+  h1,h2,h3{margin:0 0 12px;line-height:1.3}
+  h1{font-size:24px}
+  h3{font-size:16px;margin-top:22px}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+  .center-text{text-align:center}
+
+  .summary{
+    background:#f9fafc;border:1px solid var(--line);
+    border-radius:var(--radius-sm);padding:14px 16px;margin:16px 0;
+  }
+  .summary .line{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);
+    font-size:15px;
+  }
+  .summary .line:last-child{border-bottom:none}
+
+  .methods{
+    display:grid;grid-template-columns:repeat(2,1fr);
+    gap:12px;margin-top:8px;
+  }
+  @media(max-width:560px){.methods{grid-template-columns:1fr}}
+  .method{
+    border:2px solid var(--line);border-radius:11px;
+    padding:16px 12px;text-align:center;cursor:pointer;
+    transition:border-color .2s,background .2s,box-shadow .2s,transform .15s;
+    background:#fff;display:flex;flex-direction:column;align-items:center;
+    gap:4px;user-select:none;
+  }
+  .method:hover{border-color:#93a8d8;transform:translateY(-1px)}
+  .method.active{
+    border-color:var(--brand);background:var(--brand-soft);
+    box-shadow:0 0 0 3px rgba(31,58,138,.12);
+  }
+  .method .method-name{font-weight:700;font-size:15px}
+  .method .method-sub{font-size:12px;color:var(--muted)}
+
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row > *{flex:1 1 200px;min-width:0}
+
+  label{display:block;font-weight:600;margin:14px 0 6px;font-size:14px}
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="file"]{
+    width:100%;padding:11px 13px;border:1px solid var(--line);
+    border-radius:var(--radius-sm);font-size:15px;background:#fff;
+    color:var(--text);transition:border-color .2s,box-shadow .2s;
+    font-family:inherit;
+  }
+  input:focus{
+    outline:none;border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(31,58,138,.15);
+  }
+  input[type="file"]{padding:8px;background:#fafbfd}
+  input[readonly]{background:#f3f4f6;color:var(--muted);cursor:not-allowed}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:13px 18px;border:none;border-radius:var(--radius-sm);
+    font-size:15px;font-weight:700;cursor:pointer;
+    transition:background .2s,transform .1s,opacity .2s;
+    font-family:inherit;width:100%;margin-top:18px;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-primary:hover:not(:disabled){background:var(--brand-2)}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+
+  .alert{
+    padding:12px 14px;border-radius:var(--radius-sm);
+    margin:12px 0;font-size:14px;line-height:1.5;
+  }
+  .alert.err{background:var(--err-soft);color:#7f1d1d;border:1px solid #fecaca}
+  .alert.ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+  .alert.info{background:#e0f2fe;color:#075985;border:1px solid #bae6fd}
+
+  .hidden{display:none!important}
+
+  .toast{
+    position:fixed;top:20px;left:50%;
+    transform:translate(-50%,-20px);
+    background:#0f172a;color:#fff;
+    padding:12px 20px;border-radius:var(--radius-sm);
+    box-shadow:var(--shadow);opacity:0;
+    transition:opacity .25s,transform .25s;
+    z-index:9999;font-size:14px;font-weight:600;
+    pointer-events:none;max-width:90vw;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.ok{background:var(--ok)}
+  .toast.err{background:var(--err)}
+
+  .file-info{font-size:12px;color:var(--muted);margin-top:6px}
+  .progress{
+    height:6px;background:#e5e7eb;border-radius:999px;
+    overflow:hidden;margin-top:10px;display:none;
+  }
+  .progress.show{display:block}
+  .progress .bar{
+    height:100%;width:0%;background:var(--brand);
+    transition:width .15s ease;
+  }
+
+  @media(max-width:480px){
+    .card{padding:20px}
+    h1{font-size:21px}
+  }
+</style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <div class="toolbar">
+        <div class="logo"><span class="dot"></span> pay-to-john-latif</div>
+      </div>
+
+      <h1>إتمام الدفع</h1>
+      <p class="muted">يرجى مراجعة بيانات العملية، إدخال بياناتك، واختيار طريقة الدفع.</p>
+
+      <div id="loadingLink" class="alert info">جارٍ تحميل بيانات العملية…</div>
+      <div id="linkError" class="alert err hidden"></div>
+
+      <div id="checkoutArea" class="hidden">
+        <div class="summary">
+          <div class="line">
+            <span class="muted">رقم العملية</span>
+            <strong id="linkId">—</strong>
+          </div>
+          <div class="line">
+            <span class="muted">وصف العملية</span>
+            <strong id="description">—</strong>
+          </div>
+          <div class="line">
+            <span class="muted">المبلغ</span>
+            <strong>
+              <span id="amount">—</span>
+              <span id="currency">—</span>
+            </strong>
+          </div>
+        </div>
+
+        <h3>بيانات الدفع</h3>
+
+        <div class="row">
+          <div>
+            <label for="customerName">الاسم الكامل</label>
+            <input id="customerName" type="text" autocomplete="name" placeholder="مثال: أحمد محمد" />
+          </div>
+          <div>
+            <label for="customerEmail">البريد الإلكتروني</label>
+            <input id="customerEmail" type="email" autocomplete="email" placeholder="name@example.com" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="customerPhone">رقم الهاتف</label>
+            <input id="customerPhone" type="tel" autocomplete="tel" placeholder="01xxxxxxxxx" />
+          </div>
+          <div>
+            <label for="amountField">المبلغ (محدد مسبقًا)</label>
+            <input id="amountField" type="text" readonly />
+          </div>
+        </div>
+
+        <h3>طريقة الدفع</h3>
+        <div class="methods" id="methods">
+          <div class="method active" data-method="wallet">
+            <span class="method-name">Wallet — محفظة إلكترونية</span>
+            <span class="method-sub">تحويل عبر المحفظة</span>
+          </div>
+          <div class="method" data-method="instapay">
+            <span class="method-name">InstaPay</span>
+            <span class="method-sub">تحويل فوري</span>
+          </div>
+        </div>
+
+        <div id="screenshotBlock">
+          <label for="screenshot">سكرين التحويل</label>
+          <input id="screenshot" type="file" accept="image/png,image/jpeg,image/webp" />
+          <div class="file-info" id="fileInfo">
+            الملف المطلوب: PNG / JPG / WEBP — الحجم الأقصى 4 ميجا.
+          </div>
+          <div class="progress" id="progress">
+            <div class="bar" id="progressBar"></div>
+          </div>
+        </div>
+
+        <div id="alertBox" aria-live="polite"></div>
+
+        <button class="btn btn-primary" id="payBtn" type="button">
+          إرسال الدفع
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------------------------------------------------
+   * Helpers
+   * --------------------------------------------------------- */
+  const el = (id) => document.getElementById(id);
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function showToast(message, type) {
+    const t = el('toast');
+    if (!t) return;
+    t.textContent = message;
+    t.className = 'toast show ' + (type || '');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => {
+      t.className = 'toast ' + (type || '');
+    }, 2800);
+  }
+
+  function showAlert(message, type) {
+    const box = el('alertBox');
+    if (!box) return;
+    if (!message) {
+      box.innerHTML = '';
+      return;
+    }
+    box.innerHTML = '<div class="alert ' + (type || 'err') + '">' + escapeHtml(message) + '</div>';
+  }
+
+  function generateIdempotencyKey() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return 'idem-' + window.crypto.randomUUID();
+    }
+    const arr = new Uint8Array(16);
+    (window.crypto || { getRandomValues: (a) => {
+      for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
+    }}).getRandomValues(arr);
+    const hex = Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('');
+    return 'idem-' + hex;
+  }
+
+  function formatAmount(n) {
+    const num = Number(n);
+    if (!Number.isFinite(num)) return '—';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  /* ---------------------------------------------------------
+   * استخراج link_id من الرابط /pay/:linkId
+   * --------------------------------------------------------- */
+  function getLinkIdFromPath() {
+    const m = window.location.pathname.match(/^\/pay\/([A-Za-z0-9_\-]+)/);
+    return m ? m[1] : null;
+  }
+
+  /* ---------------------------------------------------------
+   * State
+   * --------------------------------------------------------- */
+  const state = {
+    linkId: getLinkIdFromPath(),
+    method: 'wallet',
+    submitting: false,
+    link: null
+  };
+
+  const loadingLink   = el('loadingLink');
+  const linkError     = el('linkError');
+  const checkoutArea  = el('checkoutArea');
+  const methodsEl     = el('methods');
+  const payBtn        = el('payBtn');
+  const screenshotEl  = el('screenshot');
+  const progressWrap  = el('progress');
+  const progressBar   = el('progressBar');
+
+  /* ---------------------------------------------------------
+   * إذا مفيش link_id → نعرض خطأ
+   * --------------------------------------------------------- */
+  if (!state.linkId) {
+    loadingLink.classList.add('hidden');
+    linkError.classList.remove('hidden');
+    linkError.textContent = 'رابط الدفع غير صالح. يرجى استخدام الرابط المرسل من المتجر.';
+    return;
+  }
+
+  /* ---------------------------------------------------------
+   * تحميل بيانات الـ link
+   * --------------------------------------------------------- */
+  async function loadLink() {
+    try {
+      const res = await fetch('/api/payment-link/' + encodeURIComponent(state.linkId));
+      let data = {};
+      try { data = await res.json(); } catch (e) { /* ignore */ }
+
+      if (!res.ok || !data.success) {
+        loadingLink.classList.add('hidden');
+        linkError.classList.remove('hidden');
+        linkError.textContent = (data && data.error && data.error.message) || 'تعذّر تحميل بيانات الرابط.';
+        return;
+      }
+
+      state.link = data.link;
+
+      el('linkId').textContent = data.link.link_id;
+      el('description').textContent = data.link.description;
+      el('amount').textContent = formatAmount(data.link.amount);
+      el('currency').textContent = data.link.currency;
+      el('amountField').value = formatAmount(data.link.amount) + ' ' + data.link.currency;
+
+      loadingLink.classList.add('hidden');
+      checkoutArea.classList.remove('hidden');
+    } catch (e) {
+      loadingLink.classList.add('hidden');
+      linkError.classList.remove('hidden');
+      linkError.textContent = 'تعذّر الاتصال بالخادم. حاول تحديث الصفحة.';
+    }
+  }
+
+  /* ---------------------------------------------------------
+   * اختيار طريقة الدفع
+   * --------------------------------------------------------- */
+  methodsEl.addEventListener('click', function (e) {
+    if (state.submitting) return;
+    const target = e.target.closest('.method');
+    if (!target) return;
+
+    methodsEl.querySelectorAll('.method').forEach(function (m) {
+      m.classList.remove('active');
+    });
+    target.classList.add('active');
+    state.method = target.dataset.method || 'wallet';
+    showAlert('');
+  });
+
+  /* ---------------------------------------------------------
+   * ملف: عرض الحجم والتحقق
+   * --------------------------------------------------------- */
+  screenshotEl.addEventListener('change', function () {
+    const f = screenshotEl.files && screenshotEl.files[0];
+    if (!f) {
+      el('fileInfo').textContent = 'الملف المطلوب: PNG / JPG / WEBP — الحجم الأقصى 4 ميجا.';
+      return;
+    }
+    const sizeKb = (f.size / 1024).toFixed(1);
+    el('fileInfo').textContent = f.name + ' — ' + sizeKb + ' KB';
+  });
+
+  /* ---------------------------------------------------------
+   * إرسال الدفع (FormData)
+   * --------------------------------------------------------- */
+  function submitPayment() {
+    if (state.submitting) return;
+
+    const name  = (el('customerName').value || '').trim();
+    const email = (el('customerEmail').value || '').trim();
+    const phone = (el('customerPhone').value || '').trim();
+    const file  = (screenshotEl.files && screenshotEl.files[0]) || null;
+
+    // ---------- Validation ----------
+    if (!name || name.length < 2) {
+      showAlert('يرجى إدخال الاسم الكامل.');
+      return;
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showAlert('يرجى إدخال بريد إلكتروني صالح.');
+      return;
+    }
+    if (!phone || !/^[0-9+\-\s]{6,30}$/.test(phone)) {
+      showAlert('يرجى إدخال رقم هاتف صالح.');
+      return;
+    }
+    if (!file) {
+      showAlert('يرجى رفع صورة سكرين التحويل.');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      showAlert('حجم الصورة يجب أن يكون أقل من 4 ميجا.');
+      return;
+    }
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
+      showAlert('نوع الصورة غير مدعوم. استخدم PNG أو JPG أو WEBP.');
+      return;
+    }
+
+    state.submitting = true;
+    payBtn.disabled = true;
+    payBtn.textContent = 'جارٍ الإرسال…';
+    showAlert('');
+    showToast('جارٍ رفع الصورة وإنشاء العملية…');
+
+    // ---------- FormData ----------
+    const form = new FormData();
+    form.append('link_id', state.linkId);
+    form.append('payment_method', state.method);
+    form.append('customer_name', name);
+    form.append('customer_email', email);
+    form.append('customer_phone', phone);
+    form.append('screenshot', file);
+
+    // ---------- Upload via XHR عشان نعرض progress ----------
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/payment/create', true);
+    xhr.setRequestHeader('Idempotency-Key', generateIdempotencyKey());
+    xhr.responseType = 'json';
+
+    progressWrap.classList.add('show');
+    progressBar.style.width = '0%';
+
+    xhr.upload.onprogress = function (evt) {
+      if (evt.lengthComputable) {
+        const pct = Math.round((evt.loaded / evt.total) * 100);
+        progressBar.style.width = pct + '%';
+      }
+    };
+
+    xhr.onload = function () {
+      progressWrap.classList.remove('show');
+
+      const data = xhr.response || {};
+      if (xhr.status < 200 || xhr.status >= 300 || !data.success) {
+        const msg = (data.error && data.error.message) || 'فشل إنشاء عملية الدفع. حاول مرة أخرى.';
+        showAlert(msg);
+        showToast('فشل الإنشاء', 'err');
+        state.submitting = false;
+        payBtn.disabled = false;
+        payBtn.textContent = 'إرسال الدفع';
+        return;
+      }
+
+      showToast('تم إنشاء العملية، جارٍ التحويل…', 'ok');
+      const redirect = data.redirect_url || ('/waiting?token=' + encodeURIComponent(data.payment_token));
+      window.location.href = redirect;
+    };
+
+    xhr.onerror = function () {
+      progressWrap.classList.remove('show');
+      showAlert('تعذّر الاتصال بالخادم.');
+      showToast('خطأ في الشبكة', 'err');
+      state.submitting = false;
+      payBtn.disabled = false;
+      payBtn.textContent = 'إرسال الدفع';
+    };
+
+    xhr.send(form);
+  }
+
+  payBtn.addEventListener('click', submitPayment);
+
+  /* ---------------------------------------------------------
+   * Enter key على الحقول
+   * --------------------------------------------------------- */
+  ['customerName', 'customerEmail', 'customerPhone'].forEach(function (id) {
+    el(id).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitPayment();
+      }
+    });
+  });
+
+  /* ---------------------------------------------------------
+   * Init
+   * --------------------------------------------------------- */
+  loadLink();
+})();
+</script>
+</body>
+</html>
