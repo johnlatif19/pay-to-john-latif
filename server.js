@@ -13,6 +13,8 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const bcrypt = require('bcryptjs');
 const admin = require('firebase-admin');
+const { FirestoreStore } = require('@google-cloud/connect-firestore');
+const { Firestore } = require('@google-cloud/firestore');
 const path = require('path');
 
 const app = express();
@@ -24,7 +26,7 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 
 /* ================================================================
- * Firebase Admin SDK
+ * Firebase Admin SDK — الطريقة 1 (JSON كامل)
  * ================================================================ */
 function initFirebase() {
   if (admin.apps.length) return admin.app();
@@ -63,10 +65,10 @@ const COL = {
 /* ================================================================
  * Session Store (Firestore) — عشان الجلسة تستمر على Serverless
  * ================================================================ */
-const FirestoreStore = require('connect-firestore')(session);
+const firestore = new Firestore();
 
 const sessionStore = new FirestoreStore({
-  dataset: db,
+  dataset: firestore,
   kind: PREFIX + 'sessions',
   cleanupInterval: 60000
 });
@@ -118,7 +120,7 @@ const paymentLimiter = rateLimit({
 });
 
 /* ================================================================
- * Cloudinary
+ * Cloudinary config
  * ================================================================ */
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -130,7 +132,7 @@ cloudinary.config({
 const CLOUDINARY_FOLDER = process.env.CLOUDINARY_FOLDER || 'mockpay/screenshots';
 
 /* ================================================================
- * Multer
+ * Multer — memory فقط ثم نرفع لـ Cloudinary
  * ================================================================ */
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -212,7 +214,7 @@ function uploadToCloudinary(buffer, publicIdHint) {
 }
 
 /* ================================================================
- * 🛡️ Clean URLs
+ * 🛡️ Clean URLs + حماية الصفحات
  * ================================================================ */
 const CLEAN_ROUTES = {
   '/waiting':   'waiting.html',
