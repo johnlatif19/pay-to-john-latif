@@ -19,12 +19,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 /* ================================================================
- * Trust proxy — ضروري على Vercel عشان express-rate-limit
+ * Trust proxy — ضروري على Vercel
  * ================================================================ */
 app.set('trust proxy', 1);
 
 /* ================================================================
- * Firebase Admin SDK — الطريقة 1 (JSON كامل)
+ * Firebase Admin SDK
  * ================================================================ */
 function initFirebase() {
   if (admin.apps.length) return admin.app();
@@ -41,10 +41,7 @@ function initFirebase() {
     }
   }
 
-  console.error('');
   console.error('❌ FIREBASE_SERVICE_ACCOUNT is not set.');
-  console.error('   Set the full JSON on one line in your .env');
-  console.error('');
   process.exit(1);
 }
 
@@ -64,6 +61,17 @@ const COL = {
 };
 
 /* ================================================================
+ * Session Store (Firestore) — عشان الجلسة تستمر على Serverless
+ * ================================================================ */
+const FirestoreStore = require('connect-firestore')(session);
+
+const sessionStore = new FirestoreStore({
+  dataset: db,
+  kind: PREFIX + 'sessions',
+  cleanupInterval: 60000
+});
+
+/* ================================================================
  * Security & parsers
  * ================================================================ */
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -81,6 +89,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   proxy: true,
+  store: sessionStore,
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
@@ -109,7 +118,7 @@ const paymentLimiter = rateLimit({
 });
 
 /* ================================================================
- * Cloudinary config
+ * Cloudinary
  * ================================================================ */
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -121,7 +130,7 @@ cloudinary.config({
 const CLOUDINARY_FOLDER = process.env.CLOUDINARY_FOLDER || 'mockpay/screenshots';
 
 /* ================================================================
- * Multer — memory فقط ثم نرفع لـ Cloudinary
+ * Multer
  * ================================================================ */
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -203,7 +212,7 @@ function uploadToCloudinary(buffer, publicIdHint) {
 }
 
 /* ================================================================
- * 🛡️ Clean URLs + حماية الصفحات
+ * 🛡️ Clean URLs
  * ================================================================ */
 const CLEAN_ROUTES = {
   '/waiting':   'waiting.html',
@@ -281,10 +290,7 @@ app.get('/api/payment-link/:linkId', async (req, res) => {
     });
   } catch (err) {
     console.error('payment-link error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
@@ -321,45 +327,27 @@ app.post(
 
       const linkSnap = await db.collection(COL.links).doc(link_id).get();
       if (!linkSnap.exists) {
-        return res.status(404).json({
-          success: false,
-          error: { code: 'LINK_NOT_FOUND', message: 'Payment link not found or inactive' }
-        });
+        return res.status(404).json({ success: false, error: { code: 'LINK_NOT_FOUND', message: 'Payment link not found or inactive' } });
       }
       const link = linkSnap.data();
       if (!link.active) {
-        return res.status(404).json({
-          success: false,
-          error: { code: 'LINK_NOT_FOUND', message: 'Payment link not found or inactive' }
-        });
+        return res.status(404).json({ success: false, error: { code: 'LINK_NOT_FOUND', message: 'Payment link not found or inactive' } });
       }
 
       if (!['wallet', 'instapay'].includes(payment_method)) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_METHOD', message: 'payment_method must be wallet or instapay' }
-        });
+        return res.status(400).json({ success: false, error: { code: 'INVALID_METHOD', message: 'payment_method must be wallet or instapay' } });
       }
 
       const name  = sanitizeText(customer_name, 80);
       const email = sanitizeText(customer_email, 120);
       const phone = sanitizeText(customer_phone, 30);
 
-      if (!name) {
-        return res.status(400).json({ success: false, error: { code: 'INVALID_NAME', message: 'customer_name is required' } });
-      }
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).json({ success: false, error: { code: 'INVALID_EMAIL', message: 'customer_email is invalid' } });
-      }
-      if (!phone || !/^[0-9+\-\s]{6,30}$/.test(phone)) {
-        return res.status(400).json({ success: false, error: { code: 'INVALID_PHONE', message: 'customer_phone is invalid' } });
-      }
+      if (!name) return res.status(400).json({ success: false, error: { code: 'INVALID_NAME', message: 'customer_name is required' } });
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ success: false, error: { code: 'INVALID_EMAIL', message: 'customer_email is invalid' } });
+      if (!phone || !/^[0-9+\-\s]{6,30}$/.test(phone)) return res.status(400).json({ success: false, error: { code: 'INVALID_PHONE', message: 'customer_phone is invalid' } });
 
       if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'MISSING_SCREENSHOT', message: 'screenshot is required' }
-        });
+        return res.status(400).json({ success: false, error: { code: 'MISSING_SCREENSHOT', message: 'screenshot is required' } });
       }
 
       const transactionId = secureId('TXN', 8);
@@ -370,10 +358,7 @@ app.post(
         uploadResult = await uploadToCloudinary(req.file.buffer, transactionId);
       } catch (err) {
         console.error('cloudinary upload error:', err.message);
-        return res.status(502).json({
-          success: false,
-          error: { code: 'UPLOAD_FAILED', message: 'Failed to upload screenshot. Please try again.' }
-        });
+        return res.status(502).json({ success: false, error: { code: 'UPLOAD_FAILED', message: 'Failed to upload screenshot. Please try again.' } });
       }
 
       const now = new Date().toISOString();
@@ -417,29 +402,20 @@ app.post(
       });
     } catch (err) {
       if (err && err.message === 'INVALID_FILE_TYPE') {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_FILE_TYPE', message: 'Only PNG/JPG/WEBP images are allowed' }
-        });
+        return res.status(400).json({ success: false, error: { code: 'INVALID_FILE_TYPE', message: 'Only PNG/JPG/WEBP images are allowed' } });
       }
       if (err && err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'FILE_TOO_LARGE', message: 'Screenshot must be <= 4MB' }
-        });
+        return res.status(400).json({ success: false, error: { code: 'FILE_TOO_LARGE', message: 'Screenshot must be <= 4MB' } });
       }
       console.error('create payment error:', err.message);
-      return res.status(500).json({
-        success: false,
-        error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-      });
+      return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
     }
   }
 );
 
-/**
- * GET /api/payment/status?token=...
- */
+/* ================================================================
+ * GET /api/payment/status
+ * ================================================================ */
 app.get('/api/payment/status', async (req, res) => {
   try {
     const token = String(req.query.token || '');
@@ -460,16 +436,13 @@ app.get('/api/payment/status', async (req, res) => {
     return res.json({ transaction_id: tx.transaction_id, status: tx.status });
   } catch (err) {
     console.error('payment/status error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
-/**
- * GET /api/payment/details?token=...
- */
+/* ================================================================
+ * GET /api/payment/details
+ * ================================================================ */
 app.get('/api/payment/details', async (req, res) => {
   try {
     const token = String(req.query.token || '');
@@ -495,10 +468,7 @@ app.get('/api/payment/details', async (req, res) => {
     return res.json({ success: true, transaction: publicTx(tx) });
   } catch (err) {
     console.error('payment/details error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
@@ -511,44 +481,31 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     const envUser = process.env.ADMIN_USERNAME || 'admin';
     const envHash = process.env.ADMIN_PASSWORD_HASH;
 
-    // 🔍 Debug logging
     console.log('🔍 LOGIN ATTEMPT:', {
       received_user: username,
       expected_user: envUser,
       hash_exists: !!envHash,
       hash_length: envHash ? envHash.length : 0,
-      hash_prefix: envHash ? envHash.substring(0, 15) : 'NONE',
-      hash_has_quotes: envHash ? (envHash.startsWith("'") || envHash.startsWith('"')) : false,
       password_length: typeof password === 'string' ? password.length : 0
     });
 
     if (typeof username !== 'string' || typeof password !== 'string') {
-      console.log('❌ INVALID_INPUT');
-      return res.status(400).json({
-        success: false,
-        error: { code: 'INVALID_INPUT', message: 'username and password are required' }
-      });
+      return res.status(400).json({ success: false, error: { code: 'INVALID_INPUT', message: 'username and password are required' } });
     }
 
     if (!envHash) {
-      console.error('❌ ADMIN_PASSWORD_HASH is not set in .env');
-      return res.status(500).json({
-        success: false,
-        error: { code: 'SERVER_MISCONFIGURED', message: 'Server authentication is not configured' }
-      });
+      console.error('❌ ADMIN_PASSWORD_HASH is not set');
+      return res.status(500).json({ success: false, error: { code: 'SERVER_MISCONFIGURED', message: 'Server authentication is not configured' } });
     }
 
-    // مقارنة اسم المستخدم (timing-safe)
     let userOk = false;
     try {
       userOk = username.length === envUser.length &&
         crypto.timingSafeEqual(Buffer.from(username), Buffer.from(envUser));
-    } catch (e) {
-      console.log('❌ user compare error:', e.message);
+    } catch {
       userOk = false;
     }
 
-    // مقارنة كلمة المرور
     let passOk = false;
     try {
       passOk = await bcrypt.compare(password, envHash);
@@ -560,21 +517,21 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     console.log('🔍 RESULTS:', { userOk, passOk });
 
     if (!userOk || !passOk) {
-      return res.status(401).json({
-        success: false,
-        error: { code: 'INVALID_CREDENTIALS', message: 'Invalid username or password' }
-      });
+      return res.status(401).json({ success: false, error: { code: 'INVALID_CREDENTIALS', message: 'Invalid username or password' } });
     }
 
     req.session.admin = { username: envUser, loginAt: Date.now() };
-    console.log('✅ LOGIN SUCCESS:', envUser);
-    return res.json({ success: true, user: { username: envUser } });
+    req.session.save((err) => {
+      if (err) {
+        console.error('❌ session save error:', err.message);
+        return res.status(500).json({ success: false, error: { code: 'SESSION_ERROR', message: 'Failed to save session' } });
+      }
+      console.log('✅ LOGIN SUCCESS:', envUser, '| Session ID:', req.sessionID);
+      return res.json({ success: true, user: { username: envUser } });
+    });
   } catch (err) {
     console.error('❌ login error:', err.message, err.stack);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
@@ -586,6 +543,7 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 app.get('/api/auth/me', (req, res) => {
+  console.log('🔍 /api/auth/me — Session ID:', req.sessionID, '| Admin:', !!(req.session && req.session.admin));
   if (req.session && req.session.admin) {
     return res.json({ success: true, user: { username: req.session.admin.username } });
   }
@@ -628,17 +586,11 @@ app.post('/api/admin/links', requireAdmin, async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      link: {
-        ...link,
-        public_url: `/pay/${link.link_id}`
-      }
+      link: { ...link, public_url: `/pay/${link.link_id}` }
     });
   } catch (err) {
     console.error('create link error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
@@ -652,10 +604,7 @@ app.get('/api/admin/links', requireAdmin, async (req, res) => {
     return res.json({ success: true, links });
   } catch (err) {
     console.error('list links error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
@@ -678,10 +627,7 @@ app.patch('/api/admin/links/:linkId', requireAdmin, async (req, res) => {
     return res.json({ success: true, link: updated });
   } catch (err) {
     console.error('update link error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
@@ -699,10 +645,7 @@ app.get('/api/admin/transactions', requireAdmin, async (req, res) => {
     return res.json({ success: true, transactions });
   } catch (err) {
     console.error('list transactions error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
@@ -727,10 +670,7 @@ app.post('/api/admin/payment/:transactionId/approve', requireAdmin, async (req, 
     return res.json({ success: true, transaction: publicTx(updated) });
   } catch (err) {
     console.error('approve error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
@@ -755,10 +695,7 @@ app.post('/api/admin/payment/:transactionId/reject', requireAdmin, async (req, r
     return res.json({ success: true, transaction: publicTx(updated) });
   } catch (err) {
     console.error('reject error:', err.message);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Internal server error' }
-    });
+    return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Internal server error' } });
   }
 });
 
